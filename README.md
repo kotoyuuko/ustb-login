@@ -6,4 +6,4 @@
 
 ### 协议 / License
 
-MIT License
+The Unlicense
