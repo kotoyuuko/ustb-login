@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+func testNetwork() bool {
+	_, err := http.Get("https://www.qq.com")
+	if err != nil {
+		return false
+	}
+	return true
+}
+
 func getIPv6() string {
 	resp, err := http.Get("http://cippv6.ustb.edu.cn/get_ip.php")
 
@@ -67,5 +75,9 @@ func main() {
 		log.Fatalln("Please input your id and password")
 	}
 
-	doLogin(*id, *pwd)
+	if !testNetwork() {
+		doLogin(*id, *pwd)
+	} else {
+		log.Println("Already logged.")
+	}
 }
