@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -44,12 +46,11 @@ func doLogin(id, password string) {
 	params.Set("v6ip", ipv6)
 
 	resp, err := http.PostForm("http://202.204.48.82", params)
-
 	if err != nil {
 		log.Fatalln(err)
 	}
-
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
@@ -66,18 +67,53 @@ func doLogin(id, password string) {
 	}
 }
 
+func parseUsage() {
+	resp, err := http.Get("http://202.204.48.82")
+	if err != nil {
+		log.Println("Failed to get usage")
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	bodyStr := string(body)
+
+	regx := regexp.MustCompile(`time='(\d+)\s+';flow='(\d+)\s+';fsele=`)
+	match := regx.FindStringSubmatch(bodyStr)
+	useTime, _ := strconv.Atoi(match[1])
+	flowV4, _ := strconv.Atoi(match[2])
+
+	flow0 := flowV4 % 1024
+	flow1 := flowV4 - flow0
+	flow0 = flow0 * 1000
+	flow0 = flow0 - flow0%1024
+	useFlowV4 := float64(flow1)/1024 + float64(flow0)/1024000
+
+	regx = regexp.MustCompile(`v6af=(\d+);v6df=`)
+	match = regx.FindStringSubmatch(bodyStr)
+	flowV6, _ := strconv.Atoi(match[1])
+	useFlowV6 := float64(flowV6) / 4096
+
+	log.Printf("Time: %d min, FlowV4: %.2f MB, FlowV6: %.2f MB\n", useTime, useFlowV4, useFlowV6)
+}
+
 func main() {
 	id := flag.String("id", "", "Student's ID")
 	pwd := flag.String("pwd", "", "Student's Password")
 	flag.Parse()
 
-	if *id == "" || *pwd == "" {
-		log.Fatalln("Please input your id and password")
-	}
-
 	if !testNetwork() {
+		if *id == "" || *pwd == "" {
+			log.Fatalln("Please input your id and password")
+		}
+
 		doLogin(*id, *pwd)
 	} else {
 		log.Println("Already logged.")
 	}
+
+	parseUsage()
 }
