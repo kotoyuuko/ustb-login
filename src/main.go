@@ -97,7 +97,13 @@ func parseUsage() {
 	flowV6, _ := strconv.Atoi(match[1])
 	useFlowV6 := float64(flowV6) / 4096
 
-	log.Printf("Time: %d min, FlowV4: %.2f MB, FlowV6: %.2f MB\n", useTime, useFlowV4, useFlowV6)
+	regx = regexp.MustCompile(`fee='(\d+)\s+';xsele=`)
+	match = regx.FindStringSubmatch(bodyStr)
+	fee, _ := strconv.Atoi(match[1])
+	fee1 := fee - fee%100
+	money := float64(fee1) / 10000
+
+	log.Printf("Time: %d min, FlowV4: %.2f MB, FlowV6: %.2f MB, Money: CNY %.2f\n", useTime, useFlowV4, useFlowV6, money)
 }
 
 func main() {
